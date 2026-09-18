@@ -76,7 +76,7 @@ export function MissionBoard({ missions }: { missions: Mission[] }) {
             {mission.report ? (
               <div className="mt-3 border-t border-cyan-400/15 pt-3">
                 <span className="font-[family-name:var(--font-mono)] text-[9px] uppercase tracking-widest text-fuchsia-300 block mb-1">
-                  // DEBRIEF REPORT
+                  {"// DEBRIEF REPORT"}
                 </span>
                 <p className="font-[family-name:var(--font-ui)] text-xs leading-relaxed text-cyan-50/85">
                   {mission.report}
