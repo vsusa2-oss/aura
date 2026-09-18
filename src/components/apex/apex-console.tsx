@@ -270,6 +270,25 @@ export function ApexConsole() {
             <p className="mt-2 max-w-sm text-center font-[family-name:var(--font-ui)] text-sm text-cyan-100/70">
               Digital officer on the line. Speak naturally. Assign work. Apex comes back with the brief.
             </p>
+            {/* Quick Directive Chips */}
+            <div className="mt-4 flex flex-wrap justify-center gap-1.5 max-w-sm px-2">
+              {[
+                { label: "Security Sweep", prompt: "Perform perimeter security scan and audit routing telemetry" },
+                { label: "Deploy Cluster", prompt: "Deploy microservice cluster canary update to edge nodes" },
+                { label: "Status Report", prompt: "Status report on all active operations and systems" },
+                { label: "Orbital Recon", prompt: "Synchronize orbital satellite constellation telemetry" },
+              ].map((btn, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={busy || !booted}
+                  onClick={() => void send(btn.prompt)}
+                  className="rounded border border-cyan-400/30 bg-black/40 px-2.5 py-1 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-wider text-cyan-200 hover:border-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-100 transition disabled:opacity-40"
+                >
+                  + {btn.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <HudPanel

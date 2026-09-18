@@ -10,7 +10,7 @@ const CANCEL =
   /\b(cancel|abort|drop|kill|stop working on|stand down on)\b/i;
 
 const ASSIGN =
-  /\b(research|look into|investigate|analyze|analyse|draft|write|prepare|summarize|summarise|monitor|track|find|build|compile|review|plan|schedule|remind|work on|take care of|handle|dig into|pull together|put together|create|design|map out)\b/i;
+  /\b(research|look into|investigate|analyze|analyse|draft|write|prepare|summarize|summarise|monitor|track|find|build|compile|review|plan|schedule|remind|work on|take care of|handle|dig into|pull together|put together|create|design|map out|scan|sweep|audit|deploy|check|security|orbital|recon|run)\b/i;
 
 function clean(text: string) {
   return text.replace(/\s+/g, " ").trim();
@@ -33,7 +33,7 @@ function extractAssignable(text: string) {
   );
 
   const explicit = stripped.match(
-    /(?:please |can you |could you |would you |i need you to |i want you to |i'd like you to |go ahead and )?(research|look into|investigate|analyze|analyse|draft|write|prepare|summarize|summarise|monitor|track|find out|find|build|compile|review|plan|schedule|remind(?: me)?(?: to)?|work on|take care of|handle|dig into|pull together|put together|create|design|map out)\s+(.+)/i,
+    /(?:please |can you |could you |would you |i need you to |i want you to |i'd like you to |go ahead and )?(research|look into|investigate|analyze|analyse|draft|write|prepare|summarize|summarise|monitor|track|find out|find|build|compile|review|plan|schedule|remind(?: me)?(?: to)?|work on|take care of|handle|dig into|pull together|put together|create|design|map out|scan|sweep|audit|deploy|check|run)\s+(.+)/i,
   );
 
   if (explicit) {
