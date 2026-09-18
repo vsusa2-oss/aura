@@ -10,6 +10,14 @@ type LineMessage = {
   streaming?: boolean;
 };
 
+/** Hide mission protocol markers while tokens stream in. */
+function visibleAssistantText(raw: string) {
+  return raw
+    .replace(/\[\[TASK:[\s\S]*?\]\]/g, "")
+    .replace(/\[\[TASK:[^\]]*$/g, "")
+    .trimEnd();
+}
+
 export function useChatStream(sessionId: string) {
   const [lines, setLines] = useState<LineMessage[]>([
     {
@@ -92,7 +100,7 @@ export function useChatStream(sessionId: string) {
               setLines((prev) =>
                 prev.map((l) =>
                   l.id === assistantLineId
-                    ? { ...l, content: assistantText }
+                    ? { ...l, content: visibleAssistantText(assistantText) }
                     : l,
                 ),
               );
