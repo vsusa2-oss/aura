@@ -22,7 +22,7 @@ function titleFromTask(raw: string) {
     .replace(/[.?!]+$/, "");
   if (clipped.length < 4) return "Open assignment";
   const words = clipped.split(" ");
-  const short = words.slice(0, 10).join(" ");
+  const short = words.slice(0, 16).join(" ");
   return short.charAt(0).toUpperCase() + short.slice(1);
 }
 
