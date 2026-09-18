@@ -1,47 +1,44 @@
-# APEX
+# APEX — Digital Operations Officer
 
-APEX is a futuristic personal executive interface for continuous text and voice conversation. It includes a live command transcript, operation tracking, spoken responses, and a Gemini-ready backend.
+A 2017-era HUD for talking to a digital officer in real time. You speak or type. Apex answers out loud, takes the work you assign, runs it in the background, and **reports back** when the brief is ready.
 
-It works immediately with a local fallback. For live Gemini responses, add a `.env.local` file:
+Think Jarvis on the glass: continuous conversation, a live mission board, and a core that actually comes back with results.
 
-```env
-GEMINI_API_KEY=your_key_here
-# Optional: GEMINI_MODEL=gemini-2.5-flash
-```
-
-Voice input and output use browser speech APIs, so no separate voice key is required. Chrome provides the best speech-recognition support.
-
-## Getting Started
-
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
+cp .env.example .env.local   # optional: add Gemini / ElevenLabs keys
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:43127](http://localhost:43127) with your browser to see the result.
+Open [http://localhost:43147](http://localhost:43147).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Tap the microphone to open the voice link (Chrome/Edge work best). Type if the mic is blocked.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Optional live intelligence
 
-## Learn More
+Apex runs on a local core out of the box. Drop keys into `.env.local` to upgrade the brain and the voice:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Conversation + mission reports (Gemini)
+GEMINI_API_KEY=your_gemini_key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Optional spoken voice (otherwise the browser voice is used)
+ELEVENLABS_API_KEY=your_elevenlabs_key
+ELEVENLABS_VOICE_ID=onwK4e9ZLuTAKqWW03F9
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The HUD status rail shows `ENGINE GEMINI` or `ENGINE LOCAL`, and `VOICE ELEVEN` or `VOICE LOCAL`.
 
-## Deploy on Vercel
+## What you can do
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Talk continuously** — after Apex speaks, the link listens again.
+- **Assign work** — “research the top three competitors in smart home and draft Monday talking points.”
+- **Get reports** — missions progress on the right; Apex files a spoken brief when they complete.
+- **Ask for status** — “where are we?”
+- **Cancel** — “cancel the competitor scan.”
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stack
+
+Next.js, TypeScript, Tailwind, shadcn/ui primitives, Gemini for conversation when a key is present, ElevenLabs or the Web Speech API for voice.
