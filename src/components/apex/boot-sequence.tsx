@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Capabilities } from "@/lib/apex/types";
@@ -20,6 +20,7 @@ interface Props {
 
 export function BootSequence({ capabilities, onEngage }: Props) {
   const [shown, setShown] = useState(0);
+  const finishedRef = useRef(false);
 
   useEffect(() => {
     if (shown >= LINES.length) return;
@@ -27,7 +28,16 @@ export function BootSequence({ capabilities, onEngage }: Props) {
     return () => clearTimeout(t);
   }, [shown]);
 
-  const ready = shown >= LINES.length;
+  // Hard fallback so a stalled cascade never traps the operator.
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setShown(LINES.length);
+      finishedRef.current = true;
+    }, 3500);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  const ready = shown >= LINES.length || finishedRef.current;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 px-6 backdrop-blur-sm">
