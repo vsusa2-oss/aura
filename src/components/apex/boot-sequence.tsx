@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 const CHECKS = [
   "AUDIO CHANNEL",
   "NEURAL LINK",
@@ -10,24 +8,21 @@ const CHECKS = [
   "OPERATOR HANDSHAKE",
 ];
 
-export function BootSequence({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    const timers = [
-      window.setTimeout(() => setStep(1), 280),
-      window.setTimeout(() => setStep(2), 720),
-      window.setTimeout(() => setStep(3), 1280),
-      window.setTimeout(() => setStep(4), 1880),
-      window.setTimeout(() => setStep(5), 2480),
-      window.setTimeout(() => onDone(), 3100),
-    ];
-    return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [onDone]);
-
+export function BootSequence({
+  step,
+  onSkip,
+}: {
+  step: number;
+  onSkip: () => void;
+}) {
   return (
     <div className="absolute inset-0 z-30 grid place-items-center bg-black/80">
-      <div className="w-full max-w-md px-6">
+      <button
+        type="button"
+        onClick={onSkip}
+        className="w-full max-w-md px-6 text-left"
+        aria-label="Skip boot sequence"
+      >
         <p className="font-[family-name:var(--font-display)] text-sm tracking-[0.55em] text-cyan-300">
           APEX BOOT
         </p>
@@ -55,7 +50,10 @@ export function BootSequence({ onDone }: { onDone: () => void }) {
             style={{ width: `${Math.min(100, step * 20)}%` }}
           />
         </div>
-      </div>
+        <p className="mt-6 font-[family-name:var(--font-mono)] text-[10px] tracking-[0.28em] text-cyan-600">
+          CLICK TO ENTER
+        </p>
+      </button>
     </div>
   );
 }

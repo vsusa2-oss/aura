@@ -154,28 +154,32 @@ export function useSpeech() {
     setSpeaking(false);
   }, []);
 
-  const speakBrowser = useCallback((text: string, opts?: SpeakOpts) => {
+  const speakBrowser = useCallback((text: string) => {
     return new Promise<void>((resolve) => {
+      if (!window.speechSynthesis || window.speechSynthesis.getVoices().length === 0) {
+        resolve();
+        return;
+      }
       const utter = new SpeechSynthesisUtterance(text);
-      const voices = window.speechSynthesis.getVoices();
-      const voice = pickVoice(voices);
+      const voice = pickVoice(window.speechSynthesis.getVoices());
       if (voice) utter.voice = voice;
       utter.rate = 1.02;
       utter.pitch = 0.92;
-      utter.onstart = () => {
-        speakingRef.current = true;
-        setSpeaking(true);
-        opts?.onStart?.();
-      };
+      let settled = false;
       const done = () => {
-        speakingRef.current = false;
-        setSpeaking(false);
-        opts?.onEnd?.();
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(limit);
         resolve();
       };
+      const limit = window.setTimeout(done, 8000);
       utter.onend = done;
       utter.onerror = done;
-      window.speechSynthesis.speak(utter);
+      try {
+        window.speechSynthesis.speak(utter);
+      } catch {
+        done();
+      }
     });
   }, []);
 
@@ -187,11 +191,22 @@ export function useSpeech() {
       setSpeaking(true);
       opts?.onStart?.();
 
+      let ended = false;
+      const finish = () => {
+        if (ended) return;
+        ended = true;
+        speakingRef.current = false;
+        setSpeaking(false);
+        opts?.onEnd?.();
+      };
+      const safety = window.setTimeout(finish, Math.min(12000, 2000 + text.length * 40));
+
       try {
         const res = await fetch("/api/speak", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text }),
+          signal: AbortSignal.timeout(3500),
         });
         if (res.status === 200 && res.headers.get("content-type")?.includes("audio")) {
           const blob = await res.blob();
@@ -199,52 +214,32 @@ export function useSpeech() {
           await new Promise<void>((resolve) => {
             const audio = new Audio(url);
             audioRef.current = audio;
-            audio.onended = () => {
+            const stop = () => {
               URL.revokeObjectURL(url);
               resolve();
             };
-            audio.onerror = () => {
-              URL.revokeObjectURL(url);
-              resolve();
-            };
-            audio.play().catch(() => resolve());
+            audio.onended = stop;
+            audio.onerror = stop;
+            window.setTimeout(stop, 12000);
+            audio.play().catch(stop);
           });
-          speakingRef.current = false;
-          setSpeaking(false);
-          opts?.onEnd?.();
+          window.clearTimeout(safety);
+          finish();
           return;
         }
       } catch {
-        /* fall through */
+        /* fall through to browser voice */
       }
 
-      if (!window.speechSynthesis) {
-        speakingRef.current = false;
-        setSpeaking(false);
-        opts?.onEnd?.();
+      if (!window.speechSynthesis || window.speechSynthesis.getVoices().length === 0) {
+        window.clearTimeout(safety);
+        finish();
         return;
       }
 
-      if (window.speechSynthesis.getVoices().length === 0) {
-        await new Promise<void>((resolve) => {
-          window.speechSynthesis.addEventListener("voiceschanged", () => resolve(), {
-            once: true,
-          });
-          window.setTimeout(() => resolve(), 400);
-        });
-      }
-      const safety = window.setTimeout(() => {
-        if (!speakingRef.current) return;
-        speakingRef.current = false;
-        setSpeaking(false);
-        opts?.onEnd?.();
-      }, Math.min(20000, 2500 + text.length * 55));
-      await speakBrowser(text, { onStart: undefined, onEnd: undefined });
-      const stillSpeaking = speakingRef.current;
+      await speakBrowser(text);
       window.clearTimeout(safety);
-      speakingRef.current = false;
-      setSpeaking(false);
-      if (stillSpeaking) opts?.onEnd?.();
+      finish();
     },
     [cancelSpeech, speakBrowser, stopListening],
   );

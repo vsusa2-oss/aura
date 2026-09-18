@@ -18,6 +18,7 @@ const GREETING =
 
 export function ApexConsole() {
   const [booted, setBooted] = useState(false);
+  const [bootStep, setBootStep] = useState(0);
   const [draft, setDraft] = useState("");
   const [entries, setEntries] = useState<TranscriptEntry[]>([]);
   const [state, setState] = useState<LinkState>("boot");
@@ -29,6 +30,7 @@ export function ApexConsole() {
   const [level, setLevel] = useState(0.18);
 
   const busyRef = useRef(false);
+  const bootedRef = useRef(false);
   const linkOpenRef = useRef(false);
   const entriesRef = useRef(entries);
   const {
@@ -200,13 +202,14 @@ export function ApexConsole() {
   }, []);
 
   useEffect(() => {
-    const tick = () => setClock(new Date().toISOString().slice(11, 19));
-    tick();
-    const id = window.setInterval(tick, 1000);
+    const id = window.setInterval(() => {
+      setClock(new Date().toISOString().slice(11, 19));
+    }, 1000);
     return () => window.clearInterval(id);
   }, []);
 
   useEffect(() => {
+    if (!booted) return;
     const id = window.setInterval(() => {
       setLevel(
         state === "listening" || state === "speaking" || state === "reporting"
@@ -215,16 +218,40 @@ export function ApexConsole() {
       );
     }, 140);
     return () => window.clearInterval(id);
-  }, [state]);
+  }, [booted, state]);
 
   const finishBoot = useCallback(() => {
+    if (bootedRef.current) return;
+    bootedRef.current = true;
     setBooted(true);
-    setState("speaking");
+    setBootStep(5);
+    setState("standby");
     push("apex", GREETING);
-    void speakRef.current(GREETING, {
+    void speakRef.current?.(GREETING, {
       onEnd: () => setState("standby"),
-    });
+    }).catch(() => setState("standby"));
   }, [push]);
+
+  const finishBootRef = useRef(finishBoot);
+  useEffect(() => {
+    finishBootRef.current = finishBoot;
+  }, [finishBoot]);
+
+  useEffect(() => {
+    const timers = [
+      window.setTimeout(() => setBootStep(1), 280),
+      window.setTimeout(() => setBootStep(2), 720),
+      window.setTimeout(() => setBootStep(3), 1280),
+      window.setTimeout(() => setBootStep(4), 1880),
+      window.setTimeout(() => setBootStep(5), 2480),
+      window.setTimeout(() => finishBootRef.current(), 3100),
+    ];
+    const failsafe = window.setTimeout(() => finishBootRef.current(), 4500);
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      window.clearTimeout(failsafe);
+    };
+  }, []);
 
   const toggleLink = () => {
     if (linkOpen) {
@@ -251,7 +278,7 @@ export function ApexConsole() {
       <div className="hex-grid" />
       <div className="vignette" />
       <div className="scanlines" />
-      {!booted ? <BootSequence onDone={finishBoot} /> : null}
+      {!booted ? <BootSequence step={bootStep} onSkip={finishBoot} /> : null}
 
       <div className="relative z-10 flex min-h-dvh flex-col gap-3 p-3 sm:p-5">
         <StatusRail state={state} engine={engine} voice={voice} clock={clock} />
