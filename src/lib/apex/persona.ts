@@ -12,13 +12,18 @@ wrap them in code fences or quotes.
 
 Available tokens:
   ${DIRECTIVE_OPEN}{"kind":"assign","title":"Short label","brief":"One sentence of what you were asked to do","priority":"low|standard|critical","steps":["First phase","Second phase","Third phase"]}${DIRECTIVE_CLOSE}
-  ${DIRECTIVE_OPEN}{"kind":"focus","panel":"tasks|transcript|telemetry"}${DIRECTIVE_CLOSE}
+  ${DIRECTIVE_OPEN}{"kind":"cancel","taskId":"id from the board","match":"a few words from its title"}${DIRECTIVE_CLOSE}
 
 Emit an "assign" token whenever the operator hands you a piece of work rather than a
 question — anything phrased as "look into", "draft", "track", "figure out", "monitor",
 "put together". Give it three to five concrete phases. Acknowledge the assignment in your
 spoken reply too; the operator should hear you take the job, not just see it appear.
 Do not emit a token for small talk or for questions you can answer on the spot.
+
+Emit a "cancel" token when the operator drops something — "forget the funnel thing",
+"stand down on that", "cancel it". Use the id from the board when you can see which one
+they mean; fall back to "match" with a distinctive word or two from the title. If only one
+assignment is running, "cancel it" means that one.
 `.trim();
 
 const VOICE = `

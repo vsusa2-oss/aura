@@ -65,6 +65,7 @@ export function useApex({ speak, cancelSpeech }: Options) {
 
   const assign = useCallback((d: Extract<Directive, { kind: "assign" }>) => {
     const steps = d.steps.length ? d.steps : ["Working the assignment"];
+    const now = Date.now();
     const task: Task = {
       id: id(),
       title: d.title,
@@ -73,18 +74,50 @@ export function useApex({ speak, cancelSpeech }: Options) {
       state: "running",
       steps: steps.map((label, i) => ({ label, state: i === 0 ? "active" : "pending" })),
       progress: 0,
-      createdAt: Date.now(),
+      createdAt: now,
+      log: [
+        { at: now, line: `Accepted — ${d.title}` },
+        { at: now, line: steps[0] },
+      ],
     };
     // Phases get uneven weights so the bar doesn't march at a fake-looking constant rate.
     const durations = steps.map(() => 2600 + Math.random() * 4200);
-    schedule.current.set(task.id, { durations, startedAt: Date.now() });
+    schedule.current.set(task.id, { durations, startedAt: now });
     setTasks((prev) => [task, ...prev]);
     return task;
   }, []);
 
+  const cancel = useCallback((d: Extract<Directive, { kind: "cancel" }>) => {
+    setTasks((prev) => {
+      const live = prev.filter((t) => t.state === "running" || t.state === "queued");
+      if (!live.length) return prev;
+
+      const target =
+        live.find((t) => t.id === d.taskId) ??
+        (d.match ? live.find((t) => titleMatches(t.title, d.match!)) : undefined) ??
+        (live.length === 1 ? live[0] : undefined);
+      if (!target) return prev;
+
+      schedule.current.delete(target.id);
+      debriefed.current.add(target.id);
+      return prev.map((t) =>
+        t.id === target.id
+          ? {
+              ...t,
+              state: "cancelled" as const,
+              log: [...t.log, { at: Date.now(), line: "Cancelled by operator" }],
+            }
+          : t,
+      );
+    });
+  }, []);
+
   /** Stream one reply. `mode` picks conversation vs. end-of-assignment debrief. */
   const runStream = useCallback(
-    async (payload: ChatRequest, opts: { taskId?: string; signal?: AbortSignal } = {}) => {
+    async (
+      payload: ChatRequest,
+      opts: { taskId?: string; signal?: AbortSignal } = {},
+    ): Promise<string> => {
       const messageId = id();
       push({
         id: messageId,
@@ -150,6 +183,7 @@ export function useApex({ speak, cancelSpeech }: Options) {
             } else if (event.type === "directive") {
               const d = event.value as Directive;
               if (d.kind === "assign") assign(d);
+              else if (d.kind === "cancel") cancel(d);
             } else if (event.type === "notice") {
               setNotice(event.value as string);
             }
@@ -169,6 +203,7 @@ export function useApex({ speak, cancelSpeech }: Options) {
               : m,
           ),
         );
+        return finalText;
       } catch (err) {
         if ((err as Error).name === "AbortError") {
           setMessages((prev) =>
@@ -178,7 +213,7 @@ export function useApex({ speak, cancelSpeech }: Options) {
                 : m,
             ),
           );
-          return;
+          return "";
         }
         const detail = err instanceof Error ? err.message : "unknown fault";
         setMessages((prev) =>
@@ -188,9 +223,10 @@ export function useApex({ speak, cancelSpeech }: Options) {
               : m,
           ),
         );
+        return "";
       }
     },
-    [assign, push, speak],
+    [assign, cancel, push, speak],
   );
 
   const send = useCallback(
@@ -242,7 +278,7 @@ export function useApex({ speak, cancelSpeech }: Options) {
           text: m.text,
         }));
 
-      await runStream(
+      const report = await runStream(
         {
           turns,
           tasks: boardSnapshot(tasksRef.current),
@@ -250,6 +286,15 @@ export function useApex({ speak, cancelSpeech }: Options) {
           debriefTask: { title: task.title, brief: task.brief, steps: task.steps },
         },
         { taskId: task.id },
+      );
+
+      if (!report) return;
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? { ...t, report, log: [...t.log, { at: Date.now(), line: "Report filed" }] }
+            : t,
+        ),
       );
     },
     [runStream, messagesRef, tasksRef],
@@ -295,14 +340,29 @@ export function useApex({ speak, cancelSpeech }: Options) {
               progress: 100,
               completedAt: Date.now(),
               steps: task.steps.map((s) => ({ ...s, state: "done" as const })),
+              log: [
+                ...task.log,
+                { at: Date.now(), line: "All phases closed — compiling debrief" },
+              ],
             };
             finished.push(done);
             return done;
           }
 
-          if (Math.abs(progress - task.progress) > 0.4 || stepsDiffer(task.steps, steps)) {
+          if (stepsDiffer(task.steps, steps)) {
             changed = true;
-            return { ...task, progress, steps };
+            const entered = steps[active];
+            return {
+              ...task,
+              progress,
+              steps,
+              log: entered ? [...task.log, { at: Date.now(), line: entered.label }] : task.log,
+            };
+          }
+
+          if (Math.abs(progress - task.progress) > 0.4) {
+            changed = true;
+            return { ...task, progress };
           }
           return task;
         });
@@ -361,6 +421,17 @@ function boardSnapshot(tasks: Task[]) {
 
 function stepsDiffer(a: Task["steps"], b: Task["steps"]) {
   return a.some((s, i) => s.state !== b[i]?.state);
+}
+
+/** The model usually names an assignment rather than quoting its id back at us. */
+function titleMatches(title: string, match: string): boolean {
+  const words = match
+    .toLowerCase()
+    .split(/\W+/)
+    .filter((w) => w.length > 3);
+  if (!words.length) return false;
+  const lower = title.toLowerCase();
+  return words.some((w) => lower.includes(w));
 }
 
 /** Speak in whole sentences so playback can start before the reply finishes streaming. */

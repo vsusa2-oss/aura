@@ -16,11 +16,16 @@ export interface Message {
 
 export type CoreId = "gemini" | "local";
 
-export type TaskState = "queued" | "running" | "complete" | "failed";
+export type TaskState = "queued" | "running" | "complete" | "cancelled" | "failed";
 
 export interface TaskStep {
   label: string;
   state: "pending" | "active" | "done";
+}
+
+export interface TaskLogLine {
+  at: number;
+  line: string;
 }
 
 export interface Task {
@@ -33,6 +38,9 @@ export interface Task {
   progress: number;
   createdAt: number;
   completedAt?: number;
+  /** Timestamped activity trail, appended as each phase closes. */
+  log: TaskLogLine[];
+  /** The debrief APEX filed on completion, kept on the card as well as in the transcript. */
   report?: string;
 }
 
@@ -45,9 +53,8 @@ export type Directive =
       priority: Task["priority"];
       steps: string[];
     }
-  | { kind: "status"; taskId?: string }
-  | { kind: "cancel"; taskId?: string }
-  | { kind: "focus"; panel: "tasks" | "transcript" | "telemetry" };
+  /** `match` lets the model name the assignment when it does not have the id to hand. */
+  | { kind: "cancel"; taskId?: string; match?: string };
 
 export interface ChatTurn {
   role: "operator" | "apex";

@@ -35,6 +35,8 @@ export function localReply(req: ChatRequest): string {
     );
   }
 
+  if (matches(lower, CANCEL_RE)) return cancelReply(req, lower, pick);
+
   if (matches(lower, STATUS_RE)) return boardSummary(req);
 
   if (matches(lower, THANKS_RE)) {
@@ -104,12 +106,52 @@ function localDebrief(req: ChatRequest): string {
   );
 }
 
-function boardSummary(req: ChatRequest): string {
-  const running = req.tasks.filter((t) => t.state === "running");
-  const queued = req.tasks.filter((t) => t.state === "queued");
-  const done = req.tasks.filter((t) => t.state === "complete");
+function cancelReply(
+  req: ChatRequest,
+  lower: string,
+  pick: <T>(options: T[]) => T,
+): string {
+  const live = req.tasks.filter((t) => t.state === "running" || t.state === "queued");
+  if (!live.length) {
+    return "Nothing's in flight to drop. The board's already clear.";
+  }
 
-  if (!req.tasks.length) {
+  const target =
+    live.length === 1
+      ? live[0]
+      : live.find((t) =>
+          t.title
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w) => w.length > 3)
+            .some((w) => lower.includes(w)),
+        );
+
+  if (!target) {
+    return `I've got ${numberWord(live.length)} running — ${live
+      .map((t) => `"${t.title}"`)
+      .join(", ")}. Which one do you want dropped?`;
+  }
+
+  const ack = pick([
+    `Dropping "${target.title}". It's off the board.`,
+    `Standing down on "${target.title}".`,
+    `Done — "${target.title}" is cancelled.`,
+  ]);
+  const directive = `${DIRECTIVE_OPEN}${JSON.stringify({
+    kind: "cancel",
+    taskId: target.id,
+  })}${DIRECTIVE_CLOSE}`;
+  return `${ack} ${directive}`;
+}
+
+function boardSummary(req: ChatRequest): string {
+  const live = req.tasks.filter((t) => t.state !== "cancelled");
+  const running = live.filter((t) => t.state === "running");
+  const queued = live.filter((t) => t.state === "queued");
+  const done = live.filter((t) => t.state === "complete");
+
+  if (!live.length) {
     return "Board's clear. Nothing running, nothing queued — I'm all yours.";
   }
 
@@ -142,6 +184,11 @@ const STATUS_RE = [
   /\bany(thing)? (done|finished|left)\b/,
 ];
 const THANKS_RE = [/\b(thanks|thank you|nice work|good job|appreciate)\b/];
+const CANCEL_RE = [
+  /\b(cancel|abort|stand down|call it off|drop (it|that|the)|forget (it|that|the))\b/,
+  /\bstop working on\b/,
+  /\bnever mind\b/,
+];
 const CAPABILITY_RE = [
   /\bwhat can you (do|handle)\b/,
   /\byour (capabilities|abilities|skills)\b/,

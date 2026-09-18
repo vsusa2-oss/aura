@@ -87,15 +87,12 @@ function parseDirective(raw: string): Directive | null {
         steps: (steps.length ? steps : DEFAULT_STEPS).slice(0, 6),
       };
     }
-    case "focus":
-      if (d.panel === "tasks" || d.panel === "transcript" || d.panel === "telemetry") {
-        return { kind: "focus", panel: d.panel };
-      }
-      return null;
-    case "status":
-      return { kind: "status", taskId: typeof d.taskId === "string" ? d.taskId : undefined };
     case "cancel":
-      return { kind: "cancel", taskId: typeof d.taskId === "string" ? d.taskId : undefined };
+      return {
+        kind: "cancel",
+        taskId: typeof d.taskId === "string" ? d.taskId : undefined,
+        match: typeof d.match === "string" ? d.match : undefined,
+      };
     default:
       return null;
   }

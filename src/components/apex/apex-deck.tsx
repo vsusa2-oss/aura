@@ -13,6 +13,7 @@ import {
 import { BootSequence } from "@/components/apex/boot-sequence";
 import { CommandBar } from "@/components/apex/command-bar";
 import { ReactorCore } from "@/components/apex/reactor-core";
+import { Suggestions } from "@/components/apex/suggestions";
 import { TaskBoard } from "@/components/apex/task-board";
 import { Telemetry } from "@/components/apex/telemetry";
 import { Transcript } from "@/components/apex/transcript";
@@ -166,7 +167,8 @@ export function ApexDeck() {
             <Waveform status={status} />
           </div>
 
-          <div className="w-full shrink-0">
+          <div className="w-full shrink-0 space-y-2">
+            {exchanges === 0 && <Suggestions onPick={(p) => void apex.send(p)} />}
             <CommandBar
               onSubmit={(text) => void apex.send(text)}
               onToggleMic={toggleMic}
