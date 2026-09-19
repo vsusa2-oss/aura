@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { BootSequence } from "@/components/apex/boot-sequence";
 import { CommandBar } from "@/components/apex/command-bar";
+import { Dashboard } from "@/components/apex/dashboard";
 import { ReactorCore } from "@/components/apex/reactor-core";
 import { Suggestions } from "@/components/apex/suggestions";
 import { TaskBoard } from "@/components/apex/task-board";
@@ -182,13 +183,22 @@ export function ApexDeck() {
         </section>
 
         <div className="hidden min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3 lg:grid">
-          <Panel
-            title="Assignments"
-            hint={running ? `${running} running` : "idle"}
-            className="min-h-0"
-          >
-            <TaskBoard tasks={apex.tasks} />
-          </Panel>
+          <Tabs defaultValue="assignments" className="h-full min-h-0">
+            <TabsList className="hud-notch w-full shrink-0 bg-card/60">
+              <TabsTrigger value="assignments" className="font-mono text-[11px] tracking-widest uppercase">
+                Assignments{running ? ` · ${running}` : ""}
+              </TabsTrigger>
+              <TabsTrigger value="dashboard" className="font-mono text-[11px] tracking-widest uppercase">
+                Dashboard
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="assignments" className="hud-notch hud-panel min-h-0 flex-1 overflow-hidden">
+              <TaskBoard tasks={apex.tasks} />
+            </TabsContent>
+            <TabsContent value="dashboard" className="hud-notch hud-panel min-h-0 flex-1 overflow-hidden">
+              <Dashboard />
+            </TabsContent>
+          </Tabs>
           <Panel title="Telemetry">
             <Telemetry
               capabilities={apex.capabilities}
@@ -209,6 +219,9 @@ export function ApexDeck() {
             <TabsTrigger value="tasks" className="font-mono text-[11px] tracking-widest uppercase">
               Tasks{running ? ` · ${running}` : ""}
             </TabsTrigger>
+            <TabsTrigger value="dashboard" className="font-mono text-[11px] tracking-widest uppercase">
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="telemetry" className="font-mono text-[11px] tracking-widest uppercase">
               Deck
             </TabsTrigger>
@@ -222,6 +235,9 @@ export function ApexDeck() {
           </TabsContent>
           <TabsContent value="tasks" className="hud-notch hud-panel h-[38dvh] overflow-y-auto">
             <TaskBoard tasks={apex.tasks} />
+          </TabsContent>
+          <TabsContent value="dashboard" className="hud-notch hud-panel h-[38dvh] overflow-hidden">
+            <Dashboard />
           </TabsContent>
           <TabsContent value="telemetry" className="hud-notch hud-panel h-[38dvh] overflow-y-auto">
             <Telemetry
