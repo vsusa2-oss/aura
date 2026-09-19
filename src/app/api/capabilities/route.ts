@@ -1,4 +1,5 @@
 import { GEMINI_MODEL, geminiOnline } from "@/lib/apex/gemini";
+import { hermesOnline } from "@/lib/apex/hermes";
 import type { Capabilities } from "@/lib/apex/types";
 import { elevenLabsOnline } from "@/lib/apex/voice";
 
@@ -17,6 +18,7 @@ export async function GET() {
       ? { core: "elevenlabs", label: "ElevenLabs turbo", online: true }
       : { core: "browser", label: "On-device synthesis", online: false },
     model: gemini ? GEMINI_MODEL : undefined,
+    assistant: { core: "hermes", online: hermesOnline() },
   };
 
   return Response.json(payload, {

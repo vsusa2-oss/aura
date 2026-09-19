@@ -75,4 +75,30 @@ export interface Capabilities {
   reasoning: { core: CoreId; label: string; online: boolean };
   voice: { core: "elevenlabs" | "browser"; label: string; online: boolean };
   model?: string;
+  /** The Hermes gateway backing the Life Dashboard, Second Brain, and check-ins. */
+  assistant: { core: "hermes"; online: boolean };
+}
+
+export interface DashboardPayload {
+  configured: boolean;
+  briefing?: string;
+  calendar?: Array<{ id: string; title: string; start: string; end?: string }>;
+  email?: Array<{ id: string; from: string; subject: string; snippet: string }>;
+  tasks?: Array<{ id: string; title: string; due?: string }>;
+  generatedAt: number;
+}
+
+export interface VaultNote {
+  path: string;
+  title: string;
+  excerpt: string;
+  score: number;
+}
+
+export type CheckInMode = "morning" | "nightly" | "weekly";
+
+export interface CheckInResult {
+  mode: CheckInMode;
+  summary: string;
+  generatedAt: number;
 }

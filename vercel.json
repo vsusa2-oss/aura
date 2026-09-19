@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/checkin?mode=morning", "schedule": "0 7 * * *" },
+    { "path": "/api/checkin?mode=nightly", "schedule": "0 22 * * *" },
+    { "path": "/api/checkin?mode=weekly", "schedule": "0 18 * * 0" }
+  ]
+}
